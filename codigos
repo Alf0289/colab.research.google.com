@@ -1,0 +1,64 @@
+ip install -q openai
+
+from google.colab import userdata
+import openai
+
+# establece la API key
+openai.api_key = userdata.get('OpenAIKEY')
+
+# Definición de persona del sistema e historial de mensajes
+messages = [
+    {
+        "role": "system",
+        "content": "Tu eres un asistente prestativo y educado." # establece la persona del modelo, si será educado, formal, sarcástico, etc.
+    }
+]
+
+# SELF-CONSISTENCY
+answers = []
+LOOPS = 4
+
+prompt = """
+Retorne la 'Respuesta:" por extenso siguiendo la lógica planteada.
+y el "Resultado:" sin ninguna operación ni puntuación además del valor.
+
+Pregunta: Si hay 3 coches en el estacionamiento y llegan 2 coches más, ¿cuántos coches estarán en el estacionamiento?
+Respuesta: Ya hay 3 coches en el estacionamiento. Llegan 2 más. Ahora hay 3 + 2 = 5 coches. La respuesta es 5.
+Resultado: 5
+
+Pregunta: Las gallinas de Janet ponen 16 huevos al día. Ella come tres en el desayuno todas las mañanas.
+También hace omeletes para sus amigos todos los días utilizando otros cuatro huevos.
+Vende el resto por 2 dólares por huevo. ¿Cuánto dinero gana todos los días?
+Respuesta:
+Resultado:
+
+"""
+
+  messages.append({"role": "user", "content": prompt})  # adiciona el prompt a la instrucción inicial y al histórico
+
+for loop in range(0, LOOPS):
+
+    # Llamada a la API
+    response = openai.chat.completions.create(
+        model = "gpt-4o",
+        messages = messages,
+        max_tokens = 200,
+        temperature = 1
+    )
+
+    # Extrae la respuesta del JSON de respuesta
+    answer = response.choices[0].message.content
+    print(f"### LOOP", loop, ':\n')
+    print(answer)
+
+    start_index = answer.find("Resultado: ") + len("Resultado: ")
+    if start_index != -1:
+        number_answer = answer[start_index:].split()[0].rstrip('.')
+        #print("Respuesta:", number_answer, '\n------')
+        answers.append(int(number_answer))  # añade la respuesta a la lista de respuestas
+
+print(answers, '\n')
+
+  
+
+"""
